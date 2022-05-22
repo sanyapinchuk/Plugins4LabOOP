@@ -34,7 +34,7 @@ namespace Figures
 
         Cursor paintCursor = new Cursor("C:/Users/Asus/Desktop/4сем/ооп/Paint/icons/cursor.cur");
 
-        private List<IPlugin> plugins = new List<IPlugin>();
+        public List<IPlugin> plugins = new List<IPlugin>();
 
         private List<Point> cursorsHistory = new List<Point>();
 
@@ -53,6 +53,7 @@ namespace Figures
         private bool isPressed = false;
 
         string pluginPath = "C:/Users/Asus/Desktop/4сем/ооп/4/Plugins";
+        string pluginVerify = "C:/Users/Asus/Desktop/4сем/ооп/4/PluginIdentity/";
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
@@ -79,12 +80,15 @@ namespace Figures
                                 Where(t => t.GetInterfaces().
                                 Where(i => i.FullName == typeof(IPlugin).FullName).Any());
                 
-                //заполн€ем экземпл€рами полученных типов коллекцию плагинов
                 foreach (var type in types)
                 {
                     var plugin = asm.CreateInstance(type.FullName, true, BindingFlags.CreateInstance, null, new object[] { this, globalColor }, null, null) as IPlugin;
-                  //  var plugin = asm.CreateInstance(type.FullName) as IPlugin;
-                    plugins.Add(plugin);
+
+                    byte[] currPrivateKey = File.ReadAllBytes(pluginVerify + type.Name+".snk");
+                    if (currPrivateKey.SequenceEqual(plugin.GetPublicKey()))
+                        plugins.Add(plugin);
+                    else
+                        MessageBox.Show("Plugin " + type.FullName + "has uncorrect key");
                 }
             }
         }
@@ -411,7 +415,7 @@ namespace Figures
                 plugin.Draw(g);
             }
         }
-       
+        
 
 
         private void workArea_MouseMove(object sender, MouseEventArgs e)
@@ -456,7 +460,7 @@ namespace Figures
 
         private void clearButton_Click(object sender, EventArgs e)
         {
-            g.Clear(Color.White);
+            g.Clear(workArea.BackColor);
             isCreating = false;
             cursorsHistory.Clear();
             figures.Points.Clear();
@@ -468,6 +472,10 @@ namespace Figures
             figures.Circles.Clear();
             figures.Squares.Clear();
             figures.Polygons.Clear();
+            foreach(var plugin in plugins)
+            {
+                plugin.Clear();
+            }
         }
 
         private void workArea_Click(object sender, EventArgs e)

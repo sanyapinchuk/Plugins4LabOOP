@@ -218,7 +218,7 @@ namespace Figures
             this.panel2.Controls.Add(this.circle);
             this.panel2.Location = new System.Drawing.Point(248, 9);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(184, 98);
+            this.panel2.Size = new System.Drawing.Size(144, 98);
             this.panel2.TabIndex = 0;
             // 
             // polygon
@@ -347,7 +347,7 @@ namespace Figures
         private ImageList imageList1;
         public Panel workArea;
         private Label label1;
-        private Panel panel3;
+        public Panel panel3;
         private Button button1;
         private Button button2;
         private Button button3;
@@ -355,8 +355,8 @@ namespace Figures
         private Button button5;
         private Button button6;
         private ColorDialog colorDialog1;
-        private Button clearButton;
-        private Panel panel4;
+        public Button clearButton;
+        public Panel panel4;
         private Button button7;
         private TrackBar trackBar1;
     }
