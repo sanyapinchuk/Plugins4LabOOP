@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using System.Windows.Input;
+using System.Security.Cryptography;
 
 namespace Figures
 {
@@ -60,6 +61,17 @@ namespace Figures
 
         }
 
+        private byte[] GetPublicKeyFromAssemmbly(string filePath)
+        {
+            byte[] checksum;
+            using (SHA256 sha = SHA256.Create())
+            {
+                using (FileStream fileStream = File.OpenRead(filePath))
+                    checksum = sha.ComputeHash(fileStream);
+            }
+            return checksum;
+        }
+
         private void RefreshPlugins()
         {
             plugins.Clear();
@@ -68,12 +80,14 @@ namespace Figures
             if (!pluginDirectory.Exists)
                 pluginDirectory.Create();
 
-            //берем из директории все файлы с расширением .dll      
-            var pluginFiles = Directory.GetFiles(pluginPath, "*.dll");
+            //берем из директории все файлы с расширением .dll
+            var pluginFiles = Directory.GetFiles(pluginPath , "*.dll");
             foreach (var file in pluginFiles)
             {
+                var pubKey = GetPublicKeyFromAssemmbly((string)file);
                 //загружаем сборку
                 Assembly asm = Assembly.LoadFrom(file);
+                
                 //ищем типы, имплементирующие наш интерфейс IPlugin,
                 //чтобы не захватить лишнего
                 var types = asm.GetTypes().
@@ -81,12 +95,14 @@ namespace Figures
                                 Where(i => i.FullName == typeof(IPlugin).FullName).Any());
                 
                 foreach (var type in types)
-                {
-                    var plugin = asm.CreateInstance(type.FullName, true, BindingFlags.CreateInstance, null, new object[] { this, globalColor }, null, null) as IPlugin;
-
+                {                   
                     byte[] currPrivateKey = File.ReadAllBytes(pluginVerify + type.Name+".snk");
-                    if (currPrivateKey.SequenceEqual(plugin.GetPublicKey()))
+                    if (currPrivateKey.SequenceEqual(pubKey))
+                    {
+                        var plugin = asm.CreateInstance(type.FullName, true, BindingFlags.CreateInstance, null, new object[] { this, globalColor }, null, null) as IPlugin;
                         plugins.Add(plugin);
+                    }
+                        
                     else
                         MessageBox.Show("Plugin " + type.FullName + "has uncorrect key");
                 }
